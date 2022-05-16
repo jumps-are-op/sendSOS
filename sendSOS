@@ -1,0 +1,45 @@
+#!/bin/sh
+
+trap 'setlight 0;exit' EXIT INT
+light="tpacpi::thinklight"
+
+main(){
+	sendSOS 0.1 0.3 0.3 0.4
+}
+
+# $1 length of the short signal
+# $2 length of the long signal
+# $3 space between every signal (default 0.3)
+# $4 space between every letter (default 0.5)
+sendSOS(){
+	sendsignal "$1" 3 "${3:-0.3}"
+	sleep "${4:-0.5}"
+	sendsignal "$2" 3 "${3:-0.3}"
+	sleep "${4:-0.5}"
+	sendsignal "$1" 3 "${3:-0.3}"
+}
+
+# $1 length of signal (default 0.5 sec)
+# $2 number of repeated signals (default 1)
+# $3 delay between every repeat (default 0)
+sendsignal(){
+	local i
+	i=0
+	while [ "$i" -lt "${2:-1}" ];do
+		setlight 1
+		sleep "${1:-0.5}"
+		setlight 0
+		i=$((i+1))
+		sleep "${3:-0}"
+	done
+}
+
+setlight(){
+	brightnessctl -d "$light" s "$1" > /dev/null
+	if [ -t 1 ];then
+		[ "$1" = 0 ] && echo "${0##*/}: Disabled light ($1)" ||
+						echo "${0##*/}: Eabled light   ($1)"
+	fi
+}
+
+main "$@"
